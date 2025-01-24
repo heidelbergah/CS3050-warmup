@@ -7,9 +7,12 @@ potassium: amount of potassium in cereal. The optional
 and: and
 or: or
 <: less than 
+<=: less than or equal to
 >: greater than 
+>=: greater than or equal to
 "==": is or equal to
 (): allows for compound expressions
+!: negative operator
 
 
 Examples:
