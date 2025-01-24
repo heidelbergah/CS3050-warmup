@@ -4,22 +4,19 @@ type: type of cereal, cold or hot
 rating: rating of cereal 0-100
 shelf: shelf from the floor 1,2,3
 potassium: amount of potassium in cereal. The optional 
-&: and
-has: contains
-or: 
+and: and
+or: or
 <: less than 
 >: greater than 
 "==": is or equal to
+(): allows for compound expressions
+
 
 Examples:
-manufacuter == Kelloggs & potassium 
+manufacuter == Kelloggs and potassium > 0
+shelf == 3 or potassium > 0
 
-connection function:
-could write five functions 
-
-or just query with type paramter, other just informaiton 
-
-A = American Home Food Products;
+A = American Home Food Products
 G = General Mills
 K = Kelloggs
 N = Nabisco

@@ -1,0 +1,55 @@
+"""
+Takes in the input string and parses it for conditions and logical_operators.
+
+The format of conditions will follow: conditions = [type, operator, value]
+The format of logical_operators is as follows: logical_operators = ["logical_operator"]
+
+For example, an input string may be "manufacturer == General Mills and potassium > 0".
+The function would then return the following:
+
+conditions = [
+    (manufacturer, "==", "G"),
+    (potassium, ">", 0)
+]
+
+logical_operators = ["and"]
+
+Another example may be: (manufacturer == Kellogs and rating > 90) or shelf == 1
+This would be formatted as so:
+
+conditions = [
+    [
+        (manufacturer, "==", "K"),
+        (rating, ">", 90)
+    ],
+    (shelf, "==", 1)
+]
+
+logical_operators = ["and", "or"]
+
+"""
+def parse_query(query)
+
+
+"""
+Takes in the output from parse_query and retrives the data that meets the specified
+requirements. Returns a list of the cereal names that meet the requirements.
+"""
+def retrieve_query(conditions, logical_operators)
+
+
+"""
+Ties the two functions together. One call to this will call everything needed and returns
+expected result in a nice formatted manner.
+"""
+def execute_query(query):
+    conditions, logical_operators = parse_query(query)
+    results = retrieve_query(conditions, logical_operators)
+    fancy_print(results)
+
+
+"""
+Simply gets the input from the user and makes sure it is valid. If valid, we know we can
+parse the string.
+"""
+def get_input()
