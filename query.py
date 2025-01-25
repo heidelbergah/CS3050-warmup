@@ -1,5 +1,5 @@
 import os
-#from google.cloud import firestore
+from google.cloud import firestore
 
 def parse_query(input_query):
     parts = input_query.split(' ')
@@ -29,7 +29,8 @@ def parse_query(input_query):
             unclosed_parentheses = False
             parts[x] = parts[x][:-1]
 
-
+        #checks if parts[x] is a category and if so takes the next 3 elements of 
+        #parts and makes them into a tuple that is added to logic_statments_return
         if parts[x] in categories:
             if unclosed_parentheses:
                 if ')' in parts[x + 2]:
