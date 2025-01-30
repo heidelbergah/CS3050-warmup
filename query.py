@@ -9,6 +9,14 @@ NOTES
    If the only conditional operator allowed is "and", they why even
    bother tracking it if we already know what it'll be?
 
+TODO
+
+1. Add functionality for the "help" keyword
+2. Bugtest. Just try to break the program and place any found bugs in
+   the BUGS section.
+
+BUGS
+
 """
 
 def parse_query(input_query):
@@ -148,9 +156,11 @@ def execute_query(query):
 
 
 def fancy_print(cereals):
+    if len(cereals) == 0:
+        print("No cereals meet these requirements!")
     for cereal in cereals:
         print(f"- {cereal}")
 
 
-execute_query("manufacturer == Kellogs and shelf == 1")
+execute_query("shelf == 1 and manufacturer == Nabisco")
 
