@@ -1,5 +1,15 @@
 import os
 from google.cloud import firestore
+from admin import establish_connection
+
+"""
+NOTES
+
+1. The conditional_operators probably aren't even necessary anymore.
+   If the only conditional operator allowed is "and", they why even
+   bother tracking it if we already know what it'll be?
+
+"""
 
 def parse_query(input_query):
     parts = input_query.split(' ')
@@ -46,9 +56,101 @@ def parse_query(input_query):
 
     return (logic_statments_return,logical_operators_return)
 
-print(parse_query("manufacturer == General Mills and potassium > 0"))
 
-#def get_input():
+def retrieve_query(parsed_input):
+    expressions = parsed_input[0]
+    operators = parsed_input[1] # May not even be necessary :p
+
+    db = establish_connection() # So happy I put this in a function in admin.py
+    cereal_data = db.collection("cereal_data")
+
+    query = cereal_data
+
+    for expression in expressions:
+        param_type = ""
+        comparator = ""
+        value = ""
+
+        # A bunch of match statements to transform strings to their
+        # appropriate query values. A dictionary could probably also
+        # accomplish this, but this is the easiest. We can modify in
+        # future if so desired.
+        match expression[0]:
+            case "manufacturer":
+                param_type = "mfr"
+            case "type":
+                param_type = "type"
+            case "rating":
+                param_type = "rating"
+            case "shelf":
+                param_type = "shelf"
+            case "potassium":
+                param_type = "potass"
+            case _:
+                return "Not a valid parameter type"
+
+        match expression[1]:
+            case "==":
+                comparator = "=="
+            case "<":
+                comparator = "<"
+            case ">":
+                comparator = ">"
+            case "<=":
+                comparator = "<="
+            case ">=":
+                comparator = ">="
+            case "!=":
+                comparator = "!="
+            case _:
+                return "Not a valid comparator"
+
+        match expression[2]:
+            case "American":
+                value = "A"
+            case "General":
+                value = "G"
+            case "Kellogs":
+                value = "K"
+            case "Nabisco":
+                value = "N"
+            case "Post":
+                value = "P"
+            case "Quaker":
+                value = "Q"
+            case "Ralston":
+                value = "R"
+            case "hot":
+                value = "H"
+            case "cold":
+                value = "C"
+            case _:
+                value = float(expression[2]) # If not a string, probably a num
+                                             # Will update in the future.
+
+        # Update the current query with another where clause.
+        query = query.where(filter=firestore.FieldFilter(param_type, comparator, value))
+        
+    # Pull the results from the query we just made
+    results = query.stream()
+
+    # Put all of the names into a return list. We can add more data than just
+    # the cereal name if we want to.
+    return_list = []
+    for doc in results:
+        return_list.append(f"{doc.to_dict()["name"]}")
+
+    return return_list
 
 
-    
+def execute_query(query):
+    fancy_print(retrieve_query(parse_query(query)))
+
+
+def fancy_print(cereals):
+    for cereal in cereals:
+        print(f"- {cereal}")
+
+
+execute_query("manufacturer == Kellogs and shelf == 1")
+
