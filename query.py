@@ -21,14 +21,80 @@ BUGS
 
 def get_input():
     valid_input = False
-    categories = ["manufacturer","type","rating","shelf","potassium"]
+    
+    #defines the categories that can be used in a query always at the start of 
+    #an expression
+    categories = oneOf("manufacturer type rating shelf potassium",as_keyword=True)
+
+    #define acceptable category options for no int category options
+    #not adding them as pyparsing rules as I need them in an iterable form
     manufacturer_options = ["American Home Food Products","General Mills",
                             "Kelloggs","Nabisco","Post","Quaker Oats",
                             "Ralston Purina"]
+    type_options = ["hot","cold"]
+
+    #define acceptable operators
+    operators = (Literal("==") | Literal("<") | Literal(">") | Literal("<=") | 
+                 Literal(">=") | Literal("!="))
+    lpar = Literal("(")
+    rpar = Literal(")")
+    logical_operators = oneOf("and or")
+    
+    #parse action for expressions
+    def expression_parse(tokens):
+        categories, _, value = tokens
+        value = " ".join(value) if isinstance(value, list) else value
+        match categories:
+            case "manufacturer":
+                if value not in manufacturer_options:
+                    raise ValueError("Invalid manufacturer")
+            case "type":    
+                if value not in type_options:
+                    raise ValueError("Invalid type")
+            case "rating": 
+                if int(value) not in range(101):
+                    raise ValueError("Invalid rating")
+            case "shelf":
+                if int(value) not in range(1,4):
+                    raise ValueError("Invalid shelf")
+            case "potassium": 
+                if int(value) not in range(1001):
+                    raise ValueError("Invalid potassium")
+        return tokens
+    
+    #value can take a string or integer and will stop when it reaches a logical operator
+    #the list of strings if it was more than one is then joined together
+    value = OneOrMore(Word(alphanums)).stopOn(logical_operators).setParseAction(lambda t: " ".join(t))
+
+    #expression does not handle logical operators
+    #example: manufacturer == Kelloggs
+    expression = categories + operators + value
+    expression.setParseAction(expression_parse)
+
+    #basic query is a series of expressions with logical operators between them
+    basic_query = OneOrMore(expression + logical_operators) + expression
+
+    #closed query is a basic query enclosed in parentheses
+    closed_query = lpar + basic_query + rpar
+
+    #adds together expressions with logical operators and additional expressions 
+    query_language = (ZeroOrMore(closed_query) + logical_operators + basic_query + logical_operators + ZeroOrMore(closed_query) |
+                      ZeroOrMore(basic_query) + logical_operators + closed_query + logical_operators + ZeroOrMore(basic_query) |
+                      OneOrMore(basic_query + logical_operators + closed_query))
+    
     while not valid_input:
         #initial prompt for input 
         user_input = input("Please enter your query if you need help type \'help\'\n>>")
         print("\n")#for output readability
+        
+        #pyparsing uses spaces as a delimiter so I need to add spaces around parentheses
+        if "(" in user_input:
+            user_input = user_input.replace('(','( ')
+        if ")" in user_input:
+            user_input = user_input.replace(')',' )')
+        print(user_input)
+            
+            
 
 
         if user_input == "help":
@@ -46,100 +112,14 @@ def get_input():
                   "Queries are case sensitive\n")
         else:
             valid_input = True
-            #remove '(' and ')' as they interrupt recognition of inputs
-            user_input = user_input.replace('(','')
-            user_input = user_input.replace(')','')
-
-            input_list = user_input.split(' ')
-            error_printing_list = input_list
-            original_index = 0
-
-            #cycles through the list by removing elements until none remain or 
-            #an error is encountered
-            while len(input_list) > 0:
-                if input_list[0] == '':
-                    print("please enter something.\n")
-                    valid_input = False
-                    break
-                if input_list[0] in categories:
-                    #if the current index is a query keyword we first check the index 
-                    # ahead of it to make sure that an operator is being used
-                    if input_list[1] not in ['<','>','<=','>=','==']:
-                        valid_input = False
-                        print("Invalid entry!!")
-                        print(" ".join(error_printing_list[:original_index + 2]) + "<<< error happened here")
-                        print("expected \'<\',\'>\',\'<=\',\'>=\', or \'==\'\n")
-                    else:
-                        #if an operator is used then we check if there is a 
-                        # valid entry for the keyword two indexes ahead
-                        match input_list[0]:
-                            case "manufacturer":
-                                if input_list[2] not in manufacturer_options:
-                                    valid_input = False
-                            case "type":
-                                if input_list[2] not in ["hot","cold"]:
-                                    valid_input = False
-                            case "rating":
-                                try:
-                                    if int(input_list[2]) not in range(101):
-                                        valid_input = False
-                                except:
-                                    print("Invalid data!!!")
-                                    valid_input = False
-                            case "shelf":
-                                try:
-                                    if int(input_list[2]) not in range(1,4):
-                                        valid_input = False
-                                except:
-                                    print("Invalid data!!!")
-                                    valid_input = False
-                            case "potassium":
-                                try:
-                                    if int(input_list[2]) not in range(1,1001):
-                                        valid_input = False
-                                except:
-                                    print("Invalid data!!!")
-                                    valid_input = False
-                            case _:
-                                valid_input = False
-                        
-                        if not valid_input:
-                            print("Invalid entry!!")
-                            print(" ".join(error_printing_list[:original_index + 3]) + " <<< error happened here")
-                            print("data of that type is not accepted or the entry exceeds " +
-                                  "the accepted range of data\n")
-                            break
-                else:
-                    #error message for if a keyword is not used or misspelled 
-                    valid_input = False
-                    print("Invalid entry!!")
-                    print(" ".join(error_printing_list[:original_index]) + " <<< error happened here")
-                    print("expected \'manufacturer\', \'type\', \'rating\', \'shelf\', or \'potassium\'\n")
-                    break
-                
-                #removes the 3 items we just read and made sure were a valid logical
-                #statement
-                input_list = input_list[3:]
-                original_index += 3
-                
-                #checks if there are any more words left in the query
-                if len(input_list) > 0:
-                    #if yes they should always be either 'and', or 'or' if not 
-                    #it throws an error 
-                    if input_list[0] not in ["and","or"]:
-                        print("Invalid entry!!")
-                        print(" ".join(error_printing_list[:original_index + 3]) + " <<< error happened here")
-                        print("expected \'or\' or \'and\'\n")
-                        break
-                    else:
-                        #removes either 'and', or 'or' from the list
-                        #so that any valid query has a keyword and the loop can run again
-                        input_list = input_list[1:]
-                        original_index += 1
-            
+            try:
+                query_language.parseString(user_input)
+            except Exception as e:
+                print(f"Error: {e}")
+                valid_input = False
+                print("\n")#for output readability
         
-    return
-
+    return user_input
 
 def parse_query(input_query):
     parts = input_query.split(' ')
