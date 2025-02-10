@@ -1,6 +1,6 @@
 import os
-from google.cloud import firestore
-from admin import establish_connection
+#from google.cloud import firestore
+#from admin import establish_connection
 from pyparsing import *
 
 """
@@ -31,13 +31,6 @@ def get_input():
     #an expression
     categories = oneOf("manufacturer type rating shelf potassium",as_keyword=True)
 
-    #define acceptable category options for no int category options
-    #not adding them as pyparsing rules as I need them in an iterable form
-    manufacturer_options = ["American Home Food Products","General Mills",
-                            "Kelloggs","Nabisco","Post","Quaker Oats",
-                            "Ralston Purina"]
-    type_options = ["hot","cold"]
-
     #define acceptable operators
     operators = (Literal("==") | Literal("<") | Literal(">") | Literal("<=") | 
                  Literal(">=") | Literal("!="))
@@ -48,13 +41,14 @@ def get_input():
     #parse action for expressions
     def expression_parse(tokens):
         categories, _, value = tokens
-        value = " ".join(value) if isinstance(value, list) else value
         match categories:
             case "manufacturer":
-                if value not in manufacturer_options:
+                if value not in ["American Home Food Products","General Mills",
+                            "Kelloggs","Nabisco","Post","Quaker Oats",
+                            "Ralston Purina"]:
                     raise ValueError("Invalid manufacturer")
             case "type":    
-                if value not in type_options:
+                if value not in ["hot","cold"]:
                     raise ValueError("Invalid type")
             case "rating": 
                 if int(value) not in range(101):
@@ -69,7 +63,8 @@ def get_input():
     
     #value can take a string or integer and will stop when it reaches a logical operator
     #the list of strings if it was more than one is then joined together
-    value = OneOrMore(Word(alphanums)).stopOn(logical_operators).setParseAction(lambda t: " ".join(t))
+    value = OneOrMore(Word(alphanums)).stopOn(logical_operators)
+    value.setParseAction(lambda t: " ".join(t))
 
     #expression does not handle logical operators
     #example: manufacturer == Kelloggs
@@ -77,27 +72,24 @@ def get_input():
     expression.setParseAction(expression_parse)
 
     #basic query is a series of expressions with logical operators between them
-    basic_query = OneOrMore(expression + logical_operators) + expression
+    basic_query = infixNotation(expression, [(logical_operators, 2, opAssoc.LEFT)])
 
-    #closed query is a basic query enclosed in parentheses
-    closed_query = lpar + basic_query + rpar
 
     #adds together expressions with logical operators and additional expressions 
-    query_language = (ZeroOrMore(closed_query) + logical_operators + basic_query + logical_operators + ZeroOrMore(closed_query) |
-                      ZeroOrMore(basic_query) + logical_operators + closed_query + logical_operators + ZeroOrMore(basic_query) |
-                      OneOrMore(basic_query + logical_operators + closed_query))
+    query_language = OneOrMore(basic_query | lpar + basic_query + rpar) + stringEnd
     
     while not valid_input:
         #initial prompt for input 
-        user_input = input("Please enter your query if you need help type \'help\'\n>>")
+        user_input = input("Please enter your query if you need help type \'help\' if you want to quit type \'exit\'\n>>")
         print("\n")#for output readability
         
         #pyparsing uses spaces as a delimiter so I need to add spaces around parentheses
+        #does not affect queries that already have spaces around parentheses
+        #cause pyparsing handles double spaces 
         if "(" in user_input:
             user_input = user_input.replace('(','( ')
         if ")" in user_input:
             user_input = user_input.replace(')',' )')
-        print(user_input)
             
         if user_input.lower() ==  "exit":
             return user_input
@@ -116,62 +108,61 @@ def get_input():
                   "manufacuter == Kelloggs and potassium > 0\n" + 
                   "shelf == 3 or potassium > 0\n" + 
                   "Queries are case sensitive\n")
+        elif user_input == "exit":
+            exit()
         else:
             valid_input = True
             try:
-                query_language.parseString(user_input)
+                return query_language.parseString(user_input)[0]
             except Exception as e:
                 print(f"Error: {e}")
                 valid_input = False
                 print("\n")#for output readability
         
-    return user_input
+    return
 
-def parse_query(input_query):
-    parts = input_query.split(' ')
-
-    unclosed_parentheses = False
-    operators = ["and","or"]
-    categories = ["manufacturer","type","rating","shelf","potassium"]
-
-    #index in the logic_statements_return list that is being edited 
-    active_return_list_index = 0
-    #the two lists that are returned 
-    logical_operators_return = []
-    logic_statments_return = []  
-    for x in range(len(parts)): 
-
-        if '(' in parts[x]:
-            if unclosed_parentheses:
-                return "parse error no double nesting parentheses"
+#recursive function that formats the query into a list of lists
+#with index one containing the expressions which are nested to represent 
+#the order of operations and the second index containing the logical operators
+def parse_query(input_query, depth, active_index_list, parsed_list):
+    active_index_list.append(0)
+    expression_list = []
+    while active_index_list[depth] < len(input_query):
+        if active_index_list[0] >= len(input_query):
+            return parsed_list
+        elif isinstance(input_query[active_index_list[depth]],list):
+            print("in")
+            if depth > 0:
+                expression_list.append(parse_query(input_query[active_index_list[depth]],depth + 1,active_index_list,parsed_list))
             else:
-                logic_statments_return.append([])
-                unclosed_parentheses = True
-                parts[x] = parts[x][1:]
-
-        if ')' in parts[x]:
-            if not unclosed_parentheses:
-                return "parse error '(' is expected before ')'"
-            unclosed_parentheses = False
-            parts[x] = parts[x][:-1]
-
-        #checks if parts[x] is a category and if so takes the next 3 elements of 
-        #parts and makes them into a tuple that is added to logic_statments_return
-        if parts[x] in categories:
-            if unclosed_parentheses:
-                if ')' in parts[x + 2]:
-                    parts[x + 2] = parts[x + 2][:-1]
-                    unclosed_parentheses = False
-                logic_statments_return[active_return_list_index].append((parts[x], parts[x + 1], parts[x + 2]))
+                parsed_list[0].append(parse_query(input_query[active_index_list[depth]],depth + 1,active_index_list,parsed_list))
+            active_index_list.pop()
+            active_index_list[depth] += 1
+            parsed_list[1].append(input_query[active_index_list[depth]])
+            active_index_list[depth] += 1
+            print("out")
+        else:
+            #adds 
+            expression = []
+            expression.append(input_query[active_index_list[depth]])
+            print(parsed_list)
+            expression.append(input_query[active_index_list[depth] + 1])
+            expression.append(input_query[active_index_list[depth] + 2])
+            if depth > 0:
+                expression_list.append(expression)
             else:
-                logic_statments_return.append((parts[x], parts[x + 1], parts[x + 2]))
-                active_return_list_index += 1
+                parsed_list[0].append(expression)
+            try:
+                parsed_list[1].append(input_query[active_index_list[depth] + 3])
+            except:
+                if depth > 0:
+                    return expression_list
+                return parsed_list
 
-        if parts[x] in operators:
-            logical_operators_return.append(parts[x])
+            active_index_list[depth] += 4
+    
 
-    return (logic_statments_return,logical_operators_return)
-
+    return parsed_list
 
 def retrieve_query(parsed_input):
     expressions = parsed_input[0]
@@ -271,8 +262,11 @@ def fancy_print(cereals):
 
 
 #execute_query("shelf == 1 and manufacturer == Nabisco")
-#get_input()
-
+user_in = get_input().asList()
+print(user_in)
+return_list = [[],[]]
+active_index_list = []
+print(parse_query(user_in,0,active_index_list,return_list))
 """
 # Define a main program to loop through the
 Prompts for a query.

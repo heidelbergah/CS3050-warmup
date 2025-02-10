@@ -14,7 +14,7 @@ conditions = [
 
 logical_operators = ["and"]
 
-Another example may be: (manufacturer == Kellogs and rating > 90) or shelf == 1
+Another example may be: (manufacturer == Kelloggs and rating > 90) or shelf == 1
 This would be formatted as so:
 
 conditions = [
