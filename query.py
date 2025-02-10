@@ -20,7 +20,11 @@ BUGS
 
 """
 
+
 def get_input():
+    """
+    
+    """
     valid_input = False
     
     #defines the categories that can be used in a query always at the start of 
@@ -95,10 +99,11 @@ def get_input():
             user_input = user_input.replace(')',' )')
         print(user_input)
             
-            
+        if user_input.lower() ==  "exit":
+            return user_input
 
-
-        if user_input == "help":
+    
+        elif user_input == "help":
             print("Query Language:\nmanufacuter: manufacturer of the cereal\n" + 
                   "type: type of cereal, cold or hot\n" + 
                   "rating: rating of cereal 0-100\n" + 
@@ -249,7 +254,7 @@ def retrieve_query(parsed_input):
     # the cereal name if we want to.
     return_list = []
     for doc in results:
-        return_list.append(f"{doc.to_dict()["name"]}")
+        return_list.append(f"{doc.to_dict()['name']}")
 
     return return_list
 
@@ -268,3 +273,34 @@ def fancy_print(cereals):
 #execute_query("shelf == 1 and manufacturer == Nabisco")
 #get_input()
 
+"""
+# Define a main program to loop through the
+Prompts for a query.
+Runs the query and displays results.
+Allows the user to keep making additional queries or type exit to end program.
+"""
+def main():
+    """
+    Allows program to run on a loop and provides option to exit the program 
+    """
+    print("Welcome to the Cereal Query Program!")
+    print("Type 'help' to see query instructions or 'exit' to quit.\n")
+    run_program = True
+    while run_program == True:
+        # Get the query from the user
+        user_query = get_input()
+        # Check if user wants to exit 
+        if user_query.lower() == "exit":
+            print("Exiting the Cereal Query Program. Goodbye!")
+            break
+            
+        
+        try:
+            # Execute the query and print the results
+            execute_query(user_query)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+# Run the program            
+if __name__ == "__main__":
+    main()
