@@ -1,6 +1,6 @@
 import os
-#from google.cloud import firestore
-#from admin import establish_connection
+from google.cloud import firestore
+from admin import establish_connection
 from pyparsing import *
 
 """
@@ -23,8 +23,20 @@ BUGS
 
 def get_input():
     """
-    
+    Prompts the user for a query and parses it using the defined query language grammar.
+
+    The query language supports logical operators (`and`, `or`), comparison operators (`==`, `<`, `>`, `<=`, `>=`, `!=`), 
+    and predefined categories (`manufacturer`, `type`, `rating`, `shelf`, `potassium`). The user can also type `help` 
+    to get a description of the query language or `exit` to quit the program.
+
+    Returns:
+        str: The parsed query as a list if valid, or the string "exit" if the user chooses to quit.
+        Raises a ValueError for invalid query elements.
+
+    Exceptions:
+        Prints an error message if the input is invalid and prompts the user to try again.
     """
+    # input starts as False
     valid_input = False
     
     #defines the categories that can be used in a query always at the start of 
@@ -92,7 +104,8 @@ def get_input():
             user_input = user_input.replace(')',' )')
             
         if user_input.lower() ==  "exit":
-            return user_input
+            print("Exiting the Cereal Query Program. Goodbye!")
+            return user_input.lower()
 
     
         elif user_input == "help":
@@ -125,6 +138,26 @@ def get_input():
 #with index one containing the expressions which are nested to represent 
 #the order of operations and the second index containing the logical operators
 def parse_query(input_query, depth, active_index_list, parsed_list):
+    """
+    Recursively parses the input query into a structured list format, separating expressions and logical operators.
+
+    This function is designed to handle nested queries with parentheses and preserve the logical structure 
+    of the query for easier processing later.
+
+    Args:
+        input_query (list): The parsed query input as a list of tokens.
+        depth (int): The current depth of recursion (tracks nested parentheses).
+        active_index_list (list): Tracks the current index in the input query at each depth level.
+        parsed_list (list): A list that will store the parsed query structure. 
+            parsed_list[0]: List of expressions (e.g., ['manufacturer', '==', 'Kelloggs'])
+            parsed_list[1]: List of logical operators (e.g., ['and', 'or'])
+
+    Returns:
+        list: A structured list of parsed expressions and logical operators, preserving the order of operations.
+
+    Exceptions:
+        Catches and handles indexing errors for malformed queries.
+    """
     active_index_list.append(0)
     expression_list = []
     while active_index_list[depth] < len(input_query):
@@ -165,6 +198,22 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
     return parsed_list
 
 def retrieve_query(parsed_input):
+    """
+    Executes a query on the Firestore database based on the parsed input.
+
+    This function takes the parsed query structure and converts it into Firestore-compatible filters.
+    Each expression in the parsed input is translated into a Firestore query clause, and the results 
+    are retrieved and returned as a list of cereal names.
+
+    Args:
+        parsed_input (list): A structured list containing expressions and logical operators.
+            - parsed_input[0]: List of expressions, where each expression is a list 
+              in the format [param, comparator, value].
+            - parsed_input[1]: List of logical operators (e.g., ['and', 'or']).
+
+    Returns:
+        list: A list of cereal names that match the query criteria.
+    """
     expressions = parsed_input[0]
     operators = parsed_input[1] # May not even be necessary :p
 
@@ -251,22 +300,53 @@ def retrieve_query(parsed_input):
 
 
 def execute_query(query):
-    fancy_print(retrieve_query(parse_query(query)))
+    """
+    Parses, executes, and prints the results of the user's query.
+
+    This function takes a parsed query list, processes it using `parse_query()`, 
+    and passes the structured query to `retrieve_query()` to fetch results from the database. 
+    It then calls `fancy_print()` to display the results.
+
+    Args:
+        query (ParseResults): The query input parsed by `get_input()`. It is expected to be in 
+                              the format returned by `pyparsing`.
+
+    Returns:
+        None. Prints the results of the query to the console.
+    """
+    user_query = query.asList()
+    return_list = [[],[]]
+    active_index_list = []
+    depth = 0 # default
+    fancy_print(retrieve_query(parse_query(user_query, depth, active_index_list, return_list)))
 
 
 def fancy_print(cereals):
+    """
+    Displays the query results in a user-friendly format.
+
+    This function takes a list of cereal names and prints each name on a new line.
+    If the list is empty, it informs the user that no cereals meet the query criteria.
+
+    Args:
+        cereals (list): A list of cereal names retrieved from the database.
+
+    Returns:
+        None. Prints the list of cereals to the console.
+    """
+    # printing results to counsole
     if len(cereals) == 0:
         print("No cereals meet these requirements!")
     for cereal in cereals:
         print(f"- {cereal}")
 
-
+# Some debugging code previously used 
 #execute_query("shelf == 1 and manufacturer == Nabisco")
-user_in = get_input().asList()
-print(user_in)
-return_list = [[],[]]
-active_index_list = []
-print(parse_query(user_in,0,active_index_list,return_list))
+#user_in = get_input().asList()
+#print(user_in)
+#return_list = [[],[]]
+#active_index_list = []
+#print(parse_query(user_in,0,active_index_list,return_list))
 """
 # Define a main program to loop through the
 Prompts for a query.
@@ -283,12 +363,11 @@ def main():
     while run_program == True:
         # Get the query from the user
         user_query = get_input()
+        print(user_query)
+       
         # Check if user wants to exit 
-        if user_query.lower() == "exit":
-            print("Exiting the Cereal Query Program. Goodbye!")
+        if user_query == "exit":
             break
-            
-        
         try:
             # Execute the query and print the results
             execute_query(user_query)
