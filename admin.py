@@ -21,13 +21,14 @@ INSTRUCTIONS:
 
 def establish_connection():
     """
-    Establishes a connection to the Firestore database using the provided service account key.
+    Establishes a connection to the Firestore database if not already done using the provided service account key.
 
     Returns:
         firestore.client: A Firestore client object to interact with the database.
     """
-    cred = credentials.Certificate("firestore_private_key.json")
-    firebase_admin.initialize_app(cred)
+    if not firebase_admin._apps:  # Check if Firebase is already initialized
+        cred = credentials.Certificate("firestore_private_key.json")
+        firebase_admin.initialize_app(cred)
     return firestore.client()
 
 
