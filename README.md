@@ -24,7 +24,7 @@ Types:
     
     rating: Consumer Rating of the product
     
-    shelf: Physical sotre shelf location; 1, 2, or 3
+    shelf: Physical store shelf location; 1, 2, or 3
     
     potassium: Potassium content in grams
 
@@ -91,29 +91,78 @@ The 'exit' command terminates the program when the user is finished
 Firebase Connection (____.py):
 
     establish_connection():
-
+        * Establishes a connection to the Firebase database using a provided key.
+        * Params: None
+        * Returns: firestore.client
+    
     collection_exists(db, collection_name):
+        * Checks if a Firestore collection exists by querying for at least one document.
+        * Params: 
+            * db (firestore.Client)
+            * collection_name (str)
+        * Returns:
+            * bool; True if the collection has at least one document, False otherwise
+
 
     delete_collection(db, collection_name):
+        * Deletes all documents in a specified Firestore collection.
+        * Params:
+            * db (firestore.Client)
+            * collection_name (str)
+        * Returns: None
 
 Admin (admin.py):
 
     parse_json_data(json_file):
+        * Reads and parses data from a JSON file.
+        * Params: json_file (str); The appropriate file path
+        * Returns:
+            * dict, if successful
+            * None, if unsuccessful
 
     push_data(db, data, collection_name):
+        * Uploads data to a specified Firestore collection.
+        * Params:
+            * db (firestore.Client); Firestore client object
+            * data (list); The data to upload
+            * collection_name (str); Name of the Firestore collection
+        * Returns: None
 
     initialize_database(collection_name="cereal_data"):
+        * Initializes the database by reading a JSON file, deleting the existing collection (if present), and uploading new data.
+        * Params: collection_name (optional str); Defaults to "cereal_data" if none given
+        * Returns: None
 
 Query (query.py):
 
     get_input():
-
-        expression_parse(tokens):
+        * Prompts the user for a query and validates it against a custom query grammar using pyparsing. Supports help and exit commands.
+        * Params: None
+        * Returns:
+            * valid_query (list); The parsed query as a list
+            * "exit" (str); if the user wants to quit
 
     parse_query(input_query, depth, active_index_list, parsed_list):
+        * Recursively parses a query into a structured format, separating expressions and logical operators to preserve order of operations.
+        * Params: 
+            * input_query (list); The parsed query tokens
+            * depth (int); Tracked nested parenthesis for recursion
+            * active_index_list (list): Tracked current index at each depth
+            * parsed_list (list): A structured list to store parsed expressions and local operators.
+        * Returns: (list); The structured list representing the parsed query
+
 
     retrieve_query(parsed_input):
+        * Executes a query on Firestore based on the parsed query structure and retrieves matching cereal data.
+        * Params: parsed_input (list); Structured list of expressions and logic operators
+        * Returns: return_list (list); A list of cereal names that match the query
 
     execute_query(query):
+        * Parses, executes, and prints the results of the user's query.
+        * Params: query (list); The parsed query input
+        * Returns: None
 
     fancy_print(cereals):
+        * Displays the query results in a user-friendly format.
+        * Params: cereals (list); List of retreived cereal names
+        * Returns: None
