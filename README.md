@@ -88,21 +88,21 @@ The user is able to view a list of available operators and example queries by us
 The 'exit' command terminates the program when the user is finished
 
 ## Code Functions
-Firebase Connection (admin.py):
+Firebase Connection (____.py):
 
     establish_connection():
-
-    parse_json_data(json_file):
-
-    push_data(db, data, collection_name):
 
     collection_exists(db, collection_name):
 
     delete_collection(db, collection_name):
 
-    initialize_database(collection_name="cereal_data"):
-
 Admin (admin.py):
+
+    parse_json_data(json_file):
+
+    push_data(db, data, collection_name):
+
+    initialize_database(collection_name="cereal_data"):
 
 Query (query.py):
 
