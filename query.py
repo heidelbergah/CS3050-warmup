@@ -92,7 +92,7 @@ def get_input():
     
     while not valid_input:
         #initial prompt for input 
-        user_input = input("Please enter your query if you need help type \'help\' if you want to quit type \'exit\'\n>>")
+        user_input = input("Please enter your query if you need help type 'help' if you want to quit type \'exit\'\n>>")
         print("\n")#for output readability
         
         #pyparsing uses spaces as a delimiter so I need to add spaces around parentheses
@@ -106,9 +106,7 @@ def get_input():
         if user_input.lower() ==  "exit":
             print("Exiting the Cereal Query Program. Goodbye!")
             return user_input.lower()
-
-    
-        elif user_input == "help":
+        elif user_input.lower() == "help":
             print("Query Language:\nmanufacuter: manufacturer of the cereal\n" + 
                   "type: type of cereal, cold or hot\n" + 
                   "rating: rating of cereal 0-100\n" + 
@@ -121,8 +119,7 @@ def get_input():
                   "manufacuter == Kelloggs and potassium > 0\n" + 
                   "shelf == 3 or potassium > 0\n" + 
                   "Queries are case sensitive\n")
-        elif user_input == "exit":
-            exit()
+
         else:
             valid_input = True
             try:
@@ -161,10 +158,12 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
     active_index_list.append(0)
     expression_list = []
     while active_index_list[depth] < len(input_query):
+        #active_index_list[0] is the active index of the original input_query list
         if active_index_list[0] >= len(input_query):
             return parsed_list
+        #if the current index is a list then it will call parse_query using input_query[active_index_list[depth]]
+        #as the new input_query
         elif isinstance(input_query[active_index_list[depth]],list):
-            print("in")
             if depth > 0:
                 expression_list.append(parse_query(input_query[active_index_list[depth]],depth + 1,active_index_list,parsed_list))
             else:
@@ -173,28 +172,32 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
             active_index_list[depth] += 1
             parsed_list[1].append(input_query[active_index_list[depth]])
             active_index_list[depth] += 1
-            print("out")
+        #if the current index is a string then it can assume that the string 
+        #is a category and that the next two indexes are a comparator and a value
         else:
             #adds 
             expression = []
             expression.append(input_query[active_index_list[depth]])
-            print(parsed_list)
             expression.append(input_query[active_index_list[depth] + 1])
             expression.append(input_query[active_index_list[depth] + 2])
+            #if the depth > 0(so not using the original input_query) then it will append the expression to the expression_list
+            #because that is used to handle nested statments in the parsed_list
             if depth > 0:
                 expression_list.append(expression)
             else:
                 parsed_list[0].append(expression)
+            
+            #trys and if there is a next index in the input_query then it will append the logical operator to the parsed_list[1]
             try:
                 parsed_list[1].append(input_query[active_index_list[depth] + 3])
             except:
                 if depth > 0:
                     return expression_list
-                return parsed_list
+                else: 
+                    print(parsed_list)
+                    return parsed_list
 
             active_index_list[depth] += 4
-    
-
     return parsed_list
 
 def retrieve_query(parsed_input):
@@ -347,6 +350,7 @@ def fancy_print(cereals):
 #return_list = [[],[]]
 #active_index_list = []
 #print(parse_query(user_in,0,active_index_list,return_list))
+
 """
 # Define a main program to loop through the
 Prompts for a query.
