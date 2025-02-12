@@ -4,12 +4,6 @@ from admin import establish_connection
 from pyparsing import *
 
 """
-NOTES
-
-1. The conditional_operators probably aren't even necessary anymore.
-   If the only conditional operator allowed is "and", they why even
-   bother tracking it if we already know what it'll be?
-
 TODO
 
 1. Add functionality for the "help" keyword
@@ -41,42 +35,51 @@ def get_input():
     
     #defines the categories that can be used in a query always at the start of 
     #an expression
-    categories = oneOf("manufacturer type rating shelf potassium",as_keyword=True)
+    categories = (Literal("manufacturer") | Literal("type") | Literal("shelf") | Literal("potassium"))
 
     #define acceptable operators
     operators = (Literal("==") | Literal("<") | Literal(">") | Literal("<=") | 
                  Literal(">=") | Literal("!="))
-    lpar = Literal("(")
-    rpar = Literal(")")
-    logical_operators = oneOf("and or")
     
     #parse action for expressions
     def expression_parse(tokens):
-        categories, _, value = tokens
-        match categories:
+        category, operator, value = tokens
+        match category:
             case "manufacturer":
-                if value not in ["American Home Food Products","General Mills",
-                            "Kelloggs","Nabisco","Post","Quaker Oats",
-                            "Ralston Purina"]:
-                    raise ValueError("Invalid manufacturer")
+                if value.lower() not in ["american home food products","general mills",
+                            "kelloggs","nabisco","post","quaker oats",
+                            "ralston purina"]:
+                    raise ParseException("Invalid manufacturer input")
+                elif operator != "==" and operator != "!=":
+                    raise ParseException("Invalid operator for manufacturer")
             case "type":    
-                if value not in ["hot","cold"]:
-                    raise ValueError("Invalid type")
+                if value.lower() not in ["hot","cold"]:
+                    raise ParseException("Invalid type input")
+                elif operator != "==" and operator != "!=":
+                    raise ParseException("Invalid operator for type")
             case "rating": 
-                if int(value) not in range(101):
-                    raise ValueError("Invalid rating")
+                try:
+                    if int(value) not in range(101):
+                        raise ParseException("Invalid rating input")
+                except:
+                    raise ParseException("Invalid rating input")
             case "shelf":
-                if int(value) not in range(1,4):
-                    raise ValueError("Invalid shelf")
+                try:
+                    if int(value) not in range(1,4):
+                        raise ParseException("Invalid shelf input")
+                except:
+                    raise ParseException("Invalid shelf input")
             case "potassium": 
-                if int(value) not in range(1001):
-                    raise ValueError("Invalid potassium")
+                try:
+                    if int(value) not in range(1001):
+                        raise ParseException("Invalid potassium input")
+                except:
+                    raise ParseException("Invalid potassium input")
         return tokens
     
     #value can take a string or integer and will stop when it reaches a logical operator
     #the list of strings if it was more than one is then joined together
-    value = OneOrMore(Word(alphanums)).stopOn(logical_operators)
-    value.setParseAction(lambda t: " ".join(t))
+    value = Combine(OneOrMore(Word(alphanums)).stopOn("and" | stringEnd()))
 
     #expression does not handle logical operators
     #example: manufacturer == Kelloggs
@@ -84,11 +87,7 @@ def get_input():
     expression.setParseAction(expression_parse)
 
     #basic query is a series of expressions with logical operators between them
-    basic_query = infixNotation(expression, [(logical_operators, 2, opAssoc.LEFT)])
-
-
-    #adds together expressions with logical operators and additional expressions 
-    query_language = OneOrMore(basic_query | lpar + basic_query + rpar) + stringEnd
+    query = (expression + ZeroOrMore("and" + expression)) + stringEnd()
     
     while not valid_input:
         #initial prompt for input 
@@ -99,9 +98,9 @@ def get_input():
         #does not affect queries that already have spaces around parentheses
         #cause pyparsing handles double spaces 
         if "(" in user_input:
-            user_input = user_input.replace('(','( ')
+            user_input = user_input.replace('(','')
         if ")" in user_input:
-            user_input = user_input.replace(')',' )')
+            user_input = user_input.replace(')','')
             
         if user_input.lower() ==  "exit":
             print("Exiting the Cereal Query Program. Goodbye!")
@@ -123,9 +122,15 @@ def get_input():
         else:
             valid_input = True
             try:
-                return query_language.parseString(user_input)[0]
-            except Exception as e:
-                print(f"Error: {e}")
+                valid_query = query.parseString(user_input).as_list()
+                #makes sure that the list returned is not just a list containing 
+                #only a list at index 0 and nothing else
+                if isinstance(valid_query[0],list):
+                    return valid_query[0]
+                else:
+                    return valid_query
+            except ParseException as pe:
+                print(f"Error: {pe} at position {pe.loc}")
                 valid_input = False
                 print("\n")#for output readability
         
@@ -265,19 +270,19 @@ def retrieve_query(parsed_input):
                 return "Not a valid comparator"
 
         match expression[2]:
-            case "American":
+            case "american":
                 value = "A"
-            case "General":
+            case "general":
                 value = "G"
-            case "Kellogs":
+            case "kelloggs":
                 value = "K"
-            case "Nabisco":
+            case "nabisco":
                 value = "N"
-            case "Post":
+            case "post":
                 value = "P"
-            case "Quaker":
+            case "quaker":
                 value = "Q"
-            case "Ralston":
+            case "ralston":
                 value = "R"
             case "hot":
                 value = "H"
@@ -317,11 +322,10 @@ def execute_query(query):
     Returns:
         None. Prints the results of the query to the console.
     """
-    user_query = query.asList()
     return_list = [[],[]]
     active_index_list = []
     depth = 0 # default
-    fancy_print(retrieve_query(parse_query(user_query, depth, active_index_list, return_list)))
+    fancy_print(retrieve_query(parse_query(query, depth, active_index_list, return_list)))
 
 
 def fancy_print(cereals):
