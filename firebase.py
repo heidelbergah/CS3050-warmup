@@ -65,9 +65,9 @@ def retrieve_query(parsed_input):
                 return "Not a valid comparator"
 
         match expression[2]:
-            case "american":
+            case "american home food products":
                 value = "A"
-            case "general":
+            case "general mills":
                 value = "G"
             case "kelloggs":
                 value = "K"
@@ -75,9 +75,9 @@ def retrieve_query(parsed_input):
                 value = "N"
             case "post":
                 value = "P"
-            case "quaker":
+            case "quaker oats":
                 value = "Q"
-            case "ralston":
+            case "ralston purina":
                 value = "R"
             case "hot":
                 value = "H"

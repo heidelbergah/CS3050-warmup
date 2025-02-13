@@ -71,7 +71,7 @@ def get_input():
                         raise ParseException(f"Invalid {category} input. Input an integer",
                                              error_location)
                 if int(value) not in range(1,4):
-                    raise ParseException(f"Invalid {category} input, not in range 0 - 100",
+                    raise ParseException(f"Invalid {category} input, not in range 1 - 3",
                                          error_location)
             case "potassium": 
                 try:
@@ -124,10 +124,10 @@ def get_input():
                   "potassium: amount of potassium in cereal\n" + 
                   "and: and\n<: less than\n<=: less than or equal to\n" + 
                   ">: greater than\n>=: greater than or equal to\n" + 
-                  "==: is or equal to\n(): allows for compound expressions\n" + 
+                  "==: is or equal to\n" + 
                   "!=: is not equal to operator\n\nExamples:\n" + 
                   "manufacuter == Kelloggs and potassium > 0\n" + 
-                  "shelf == 3 or potassium > 0\n" + 
+                  "shelf == 3 and potassium > 0\n" + 
                   "Queries are case sensitive\n")
 
         else:
@@ -261,7 +261,7 @@ def fancy_print(cereals):
         print("No cereals meet these requirements!")
     for cereal in cereals:
         print(f"- {cereal}")
-    print() # Empty line
+    print("\n") # Two empty lines
 
 
 """
