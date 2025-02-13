@@ -40,10 +40,8 @@ Operators:
     
     ==: Equal To
     
-    !: Negative Operator
+    !=: Not Equal To
     
-    (): Grouping Operator
-
 Values:
     
     manufacturer -> (str)
@@ -59,8 +57,6 @@ Values:
 Logical Operators:
     
     and: AND Operator
-    
-    or: OR Operator
 
 ## Example Queries
 Example of a simple query:
@@ -73,7 +69,7 @@ Example of a query with two conditions
 
 Example of a grouped query
 
-    "(manufacturer == Kelloggs and rating > 90) or shelf == 1"
+    "shelf == 2 and rating >= 60"
 
 
 ## Functional Interface
@@ -88,7 +84,7 @@ The user is able to view a list of available operators and example queries by us
 The 'exit' command terminates the program when the user is finished
 
 ## Code Functions
-Firebase Connection (____.py):
+Firebase Connection (firebase.py):
 
     establish_connection():
         * Establishes a connection to the Firebase database using a provided key.
