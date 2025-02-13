@@ -127,9 +127,9 @@ def get_input():
         if ")" in user_input:
             user_input = user_input.replace(')','')
             
-        if user_input.lower() ==  "exit":
+        if user_input.lower().replace(" ","") ==  "exit":
             print("Exiting the Cereal Query Program. Goodbye!")
-            return user_input.lower()
+            return user_input.lower().replace(" ","")
         elif user_input.lower() == "help":
             print("Query Language:\nmanufacuter: manufacturer of the cereal\n" + 
                   "type: type of cereal, cold or hot\n" + 
@@ -230,7 +230,6 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
                 if depth > 0:
                     return expression_list
                 else: 
-                    print(parsed_list)
                     return parsed_list
 
             active_index_list[depth] += 4
@@ -402,7 +401,6 @@ def main():
     while run_program == True:
         # Get the query from the user
         user_query = get_input()
-        print(user_query)
        
         # Check if user wants to exit 
         if user_query == "exit":
