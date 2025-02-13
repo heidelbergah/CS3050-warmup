@@ -1,5 +1,5 @@
 # CS3050 Warmup Collaborative Project
-### Names Here
+### Nathan Fritz, James Bouchat, Ben Quackenbush, Joseph Cancellieri
 
 ## Dataset
 We used the dataset "[80 Cereals](https://www.kaggle.com/datasets/crawford/80-cereals)" from Kaggle.com. Contains the specifications and nutrition data for 80 different popular cereal products. We excluded many columns from the original dataset for brevity.
