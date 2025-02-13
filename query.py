@@ -1,19 +1,5 @@
-import os
-from google.cloud import firestore
-from admin import establish_connection
 from pyparsing import *
-
-"""
-TODO
-
-1. Add functionality for the "help" keyword
-2. Bugtest. Just try to break the program and place any found bugs in
-   the BUGS section.
-
-BUGS
-
-"""
-
+from firebase import retrieve_query
 
 def get_input():
     """
@@ -136,10 +122,10 @@ def get_input():
                   "rating: rating of cereal 0-100\n" + 
                   "shelf: shelf from the floor 1,2,3\n" + 
                   "potassium: amount of potassium in cereal\n" + 
-                  "and: and\nor: or\n<: less than\n<=: less than or equal to\n" + 
+                  "and: and\n<: less than\n<=: less than or equal to\n" + 
                   ">: greater than\n>=: greater than or equal to\n" + 
                   "==: is or equal to\n(): allows for compound expressions\n" + 
-                  "!: negative operator\n\nExamples:\n" + 
+                  "!=: is not equal to operator\n\nExamples:\n" + 
                   "manufacuter == Kelloggs and potassium > 0\n" + 
                   "shelf == 3 or potassium > 0\n" + 
                   "Queries are case sensitive\n")
@@ -157,7 +143,7 @@ def get_input():
             except ParseException as pe:
                 print(pe)
                 valid_input = False
-                print("\n")#for output readability
+                print("\n") # for output readability
         
     return
 
@@ -235,107 +221,6 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
             active_index_list[depth] += 4
     return parsed_list
 
-def retrieve_query(parsed_input):
-    """
-    Executes a query on the Firestore database based on the parsed input.
-
-    This function takes the parsed query structure and converts it into Firestore-compatible 
-    filters. Each expression in the parsed input is translated into a Firestore 
-    query clause, and the results are retrieved and returned as a list of cereal names.
-
-    Args:
-        parsed_input (list): A structured list containing expressions and logical operators.
-            - parsed_input[0]: List of expressions, where each expression is a list 
-              in the format [param, comparator, value].
-            - parsed_input[1]: List of logical operators (e.g., ['and', 'or']).
-
-    Returns:
-        list: A list of cereal names that match the query criteria.
-    """
-    expressions = parsed_input[0]
-    operators = parsed_input[1] # May not even be necessary :p
-
-    db = establish_connection() # So happy I put this in a function in admin.py
-    cereal_data = db.collection("cereal_data")
-
-    query = cereal_data
-
-    for expression in expressions:
-        param_type = ""
-        comparator = ""
-        value = ""
-
-        # A bunch of match statements to transform strings to their
-        # appropriate query values. A dictionary could probably also
-        # accomplish this, but this is the easiest. We can modify in
-        # future if so desired.
-        match expression[0]:
-            case "manufacturer":
-                param_type = "mfr"
-            case "type":
-                param_type = "type"
-            case "rating":
-                param_type = "rating"
-            case "shelf":
-                param_type = "shelf"
-            case "potassium":
-                param_type = "potass"
-            case _:
-                return "Not a valid parameter type"
-
-        match expression[1]:
-            case "==":
-                comparator = "=="
-            case "<":
-                comparator = "<"
-            case ">":
-                comparator = ">"
-            case "<=":
-                comparator = "<="
-            case ">=":
-                comparator = ">="
-            case "!=":
-                comparator = "!="
-            case _:
-                return "Not a valid comparator"
-
-        match expression[2]:
-            case "american":
-                value = "A"
-            case "general":
-                value = "G"
-            case "kelloggs":
-                value = "K"
-            case "nabisco":
-                value = "N"
-            case "post":
-                value = "P"
-            case "quaker":
-                value = "Q"
-            case "ralston":
-                value = "R"
-            case "hot":
-                value = "H"
-            case "cold":
-                value = "C"
-            case _:
-                value = float(expression[2]) # If not a string, probably a num
-                                             # Will update in the future.
-
-        # Update the current query with another where clause.
-        query = query.where(filter=firestore.FieldFilter(param_type, comparator, value))
-        
-    # Pull the results from the query we just made
-    results = query.stream()
-
-    # Put all of the names into a return list. We can add more data than just
-    # the cereal name if we want to.
-    return_list = []
-    for doc in results:
-        return_list.append(f"{doc.to_dict()['name']}")
-
-    return return_list
-
 
 def execute_query(query):
     """
@@ -376,14 +261,8 @@ def fancy_print(cereals):
         print("No cereals meet these requirements!")
     for cereal in cereals:
         print(f"- {cereal}")
+    print() # Empty line
 
-# Some debugging code previously used 
-#execute_query("shelf == 1 and manufacturer == Nabisco")
-#user_in = get_input().asList()
-#print(user_in)
-#return_list = [[],[]]
-#active_index_list = []
-#print(parse_query(user_in,0,active_index_list,return_list))
 
 """
 # Define a main program to loop through the
@@ -415,3 +294,4 @@ def main():
 # Run the program            
 if __name__ == "__main__":
     main()
+

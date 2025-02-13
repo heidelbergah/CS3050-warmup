@@ -86,6 +86,13 @@ The 'exit' command terminates the program when the user is finished
 ## Code Functions
 Firebase Connection (firebase.py):
 
+    retrieve_query(parsed_input):
+        * Executes a query on Firestore based on the parsed query structure and retrieves matching cereal data.
+        * Params: parsed_input (list); Structured list of expressions and logic operators
+        * Returns: return_list (list); A list of cereal names that match the query
+
+Admin (admin.py):
+    
     establish_connection():
         * Establishes a connection to the Firebase database using a provided key.
         * Params: None
@@ -106,8 +113,6 @@ Firebase Connection (firebase.py):
             * db (firestore.Client)
             * collection_name (str)
         * Returns: None
-
-Admin (admin.py):
 
     parse_json_data(json_file):
         * Reads and parses data from a JSON file.
@@ -146,12 +151,6 @@ Query (query.py):
             * active_index_list (list): Tracked current index at each depth
             * parsed_list (list): A structured list to store parsed expressions and local operators.
         * Returns: (list); The structured list representing the parsed query
-
-
-    retrieve_query(parsed_input):
-        * Executes a query on Firestore based on the parsed query structure and retrieves matching cereal data.
-        * Params: parsed_input (list); Structured list of expressions and logic operators
-        * Returns: return_list (list); A list of cereal names that match the query
 
     execute_query(query):
         * Parses, executes, and prints the results of the user's query.
