@@ -19,8 +19,9 @@ def get_input():
     """
     Prompts the user for a query and parses it using the defined query language grammar.
 
-    The query language supports logical operators (`and`, `or`), comparison operators (`==`, `<`, `>`, `<=`, `>=`, `!=`), 
-    and predefined categories (`manufacturer`, `type`, `rating`, `shelf`, `potassium`). The user can also type `help` 
+    The query language supports logical operators (`and`, `or`), comparison operators 
+    (`==`, `<`, `>`, `<=`, `>=`, `!=`), and predefined categories 
+    (`manufacturer`, `type`, `rating`, `shelf`, `potassium`). The user can also type `help` 
     to get a description of the query language or `exit` to quit the program.
 
     Returns:
@@ -35,51 +36,73 @@ def get_input():
     
     #defines the categories that can be used in a query always at the start of 
     #an expression
-    categories = (Literal("manufacturer") | Literal("type") | Literal("shelf") | Literal("potassium"))
+    categories = (Literal("manufacturer") | Literal("type") | Literal("shelf") | 
+                  Literal("potassium") | Literal("rating"))
 
     #define acceptable operators
-    operators = (Literal("==") | Literal("<") | Literal(">") | Literal("<=") | 
-                 Literal(">=") | Literal("!="))
+    operators = (Literal("<=") | Literal(">=") | Literal("<") | 
+                 Literal(">")  | Literal("!=") | Literal("=="))
     
-    #parse action for expressions
-    def expression_parse(tokens):
+    #parse action for expressions to create accurate error messages
+    def expression_parse(loc,tokens):
         category, operator, value = tokens
+        error_location = loc + len(category)  + len(operator) + 2
         match category:
             case "manufacturer":
                 if value.lower() not in ["american home food products","general mills",
                             "kelloggs","nabisco","post","quaker oats",
                             "ralston purina"]:
-                    raise ParseException("Invalid manufacturer input")
+                    raise ParseException("Invalid manufacturer input",error_location)
                 elif operator != "==" and operator != "!=":
-                    raise ParseException("Invalid operator for manufacturer")
+                    error_location = loc + len(category) + 1
+                    raise ParseException("Invalid operator for manufacturer expected ['==' or '!=']",
+                                         error_location)
             case "type":    
                 if value.lower() not in ["hot","cold"]:
-                    raise ParseException("Invalid type input")
+                    raise ParseException("Invalid type input",error_location)
                 elif operator != "==" and operator != "!=":
-                    raise ParseException("Invalid operator for type")
-            case "rating": 
+                    error_location = loc + len(category) + 1
+                    raise ParseException("Invalid operator for type expected ['==' or '!=']",
+                                         error_location)
+            case "rating":
+                #needed to try and convert the string to an int 
+                # and then raise errors outside the try otherwise it just goes the 
+                # the except portion 
                 try:
-                    if int(value) not in range(101):
-                        raise ParseException("Invalid rating input")
-                except:
-                    raise ParseException("Invalid rating input")
+                    int(value)    
+                except Exception as e:
+                    if "invalid literal for int()" in e:
+                        raise ParseException(f"Invalid {category} input. Input an integer",
+                                             error_location)
+                if int(value) not in range(101):
+                    raise ParseException(f"Invalid {category} input, not in range 0 - 100",
+                                         error_location)
             case "shelf":
                 try:
-                    if int(value) not in range(1,4):
-                        raise ParseException("Invalid shelf input")
-                except:
-                    raise ParseException("Invalid shelf input")
+                    int(value)    
+                except Exception as e:
+                    if "invalid literal for int()" in e:
+                        raise ParseException(f"Invalid {category} input. Input an integer",
+                                             error_location)
+                if int(value) not in range(1,4):
+                    raise ParseException(f"Invalid {category} input, not in range 0 - 100",
+                                         error_location)
             case "potassium": 
                 try:
-                    if int(value) not in range(1001):
-                        raise ParseException("Invalid potassium input")
-                except:
-                    raise ParseException("Invalid potassium input")
+                    int(value)    
+                except Exception as e:
+                    if "invalid literal for int()" in e:
+                        raise ParseException(f"Invalid {category} input. Input an integer",
+                                             error_location)
+                if int(value) not in range(1001):
+                    raise ParseException(f"Invalid {category} input, not in range 0 - 100",
+                                         error_location)
         return tokens
     
     #value can take a string or integer and will stop when it reaches a logical operator
     #the list of strings if it was more than one is then joined together
-    value = Combine(OneOrMore(Word(alphanums)).stopOn("and" | stringEnd()))
+    value = OneOrMore(Word(alphanums)).stopOn("and" | categories | stringEnd)
+    value.setParseAction(lambda x: " ".join(x))
 
     #expression does not handle logical operators
     #example: manufacturer == Kelloggs
@@ -87,11 +110,13 @@ def get_input():
     expression.setParseAction(expression_parse)
 
     #basic query is a series of expressions with logical operators between them
-    query = (expression + ZeroOrMore("and" + expression)) + stringEnd()
-    
+    query = (expression + ZeroOrMore(Word(alphas) + expression)) + stringEnd
+
+
     while not valid_input:
         #initial prompt for input 
-        user_input = input("Please enter your query if you need help type 'help' if you want to quit type \'exit\'\n>>")
+        user_input = input("Please enter your query if you need help type 'help'"  + 
+                           " if you want to quit type \'exit\'\n>>").lower()
         print("\n")#for output readability
         
         #pyparsing uses spaces as a delimiter so I need to add spaces around parentheses
@@ -130,7 +155,7 @@ def get_input():
                 else:
                     return valid_query
             except ParseException as pe:
-                print(f"Error: {pe} at position {pe.loc}")
+                print(pe)
                 valid_input = False
                 print("\n")#for output readability
         
@@ -141,10 +166,11 @@ def get_input():
 #the order of operations and the second index containing the logical operators
 def parse_query(input_query, depth, active_index_list, parsed_list):
     """
-    Recursively parses the input query into a structured list format, separating expressions and logical operators.
+    Recursively parses the input query into a structured list format, 
+    separating expressions and logical operators.
 
-    This function is designed to handle nested queries with parentheses and preserve the logical structure 
-    of the query for easier processing later.
+    This function is designed to handle nested queries with parentheses and preserve the logical 
+    structure of the query for easier processing later.
 
     Args:
         input_query (list): The parsed query input as a list of tokens.
@@ -155,7 +181,8 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
             parsed_list[1]: List of logical operators (e.g., ['and', 'or'])
 
     Returns:
-        list: A structured list of parsed expressions and logical operators, preserving the order of operations.
+        list: A structured list of parsed expressions and logical operators, preserving the order 
+        of operations.
 
     Exceptions:
         Catches and handles indexing errors for malformed queries.
@@ -166,13 +193,15 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
         #active_index_list[0] is the active index of the original input_query list
         if active_index_list[0] >= len(input_query):
             return parsed_list
-        #if the current index is a list then it will call parse_query using input_query[active_index_list[depth]]
-        #as the new input_query
+        #if the current index is a list then it will call parse_query using 
+        #input_query[active_index_list[depth]] as the new input_query
         elif isinstance(input_query[active_index_list[depth]],list):
             if depth > 0:
-                expression_list.append(parse_query(input_query[active_index_list[depth]],depth + 1,active_index_list,parsed_list))
+                expression_list.append(parse_query(input_query[active_index_list[depth]],depth + 1,
+                                                   active_index_list,parsed_list))
             else:
-                parsed_list[0].append(parse_query(input_query[active_index_list[depth]],depth + 1,active_index_list,parsed_list))
+                parsed_list[0].append(parse_query(input_query[active_index_list[depth]],depth + 1,
+                                                  active_index_list,parsed_list))
             active_index_list.pop()
             active_index_list[depth] += 1
             parsed_list[1].append(input_query[active_index_list[depth]])
@@ -185,14 +214,16 @@ def parse_query(input_query, depth, active_index_list, parsed_list):
             expression.append(input_query[active_index_list[depth]])
             expression.append(input_query[active_index_list[depth] + 1])
             expression.append(input_query[active_index_list[depth] + 2])
-            #if the depth > 0(so not using the original input_query) then it will append the expression to the expression_list
-            #because that is used to handle nested statments in the parsed_list
+            #if the depth > 0(so not using the original input_query) then it will append the 
+            #expression to the expression_list because that is used to handle nested statments 
+            #in the parsed_list
             if depth > 0:
                 expression_list.append(expression)
             else:
                 parsed_list[0].append(expression)
             
-            #trys and if there is a next index in the input_query then it will append the logical operator to the parsed_list[1]
+            #trys and if there is a next index in the input_query then it will append the logical 
+            #operator to the parsed_list[1]
             try:
                 parsed_list[1].append(input_query[active_index_list[depth] + 3])
             except:
@@ -209,9 +240,9 @@ def retrieve_query(parsed_input):
     """
     Executes a query on the Firestore database based on the parsed input.
 
-    This function takes the parsed query structure and converts it into Firestore-compatible filters.
-    Each expression in the parsed input is translated into a Firestore query clause, and the results 
-    are retrieved and returned as a list of cereal names.
+    This function takes the parsed query structure and converts it into Firestore-compatible 
+    filters. Each expression in the parsed input is translated into a Firestore 
+    query clause, and the results are retrieved and returned as a list of cereal names.
 
     Args:
         parsed_input (list): A structured list containing expressions and logical operators.
@@ -381,6 +412,7 @@ def main():
             execute_query(user_query)
         except Exception as e:
             print(f"An error occurred: {e}")
+
 
 # Run the program            
 if __name__ == "__main__":
