@@ -57,7 +57,7 @@ def get_input():
                 try:
                     int(value)    
                 except Exception as e:
-                    if "invalid literal for int()" in e:
+                    if type(e) == ValueError:
                         raise ParseException(f"Invalid {category} input. Input an integer",
                                              error_location)
                 if int(value) not in range(101):
@@ -67,7 +67,7 @@ def get_input():
                 try:
                     int(value)    
                 except Exception as e:
-                    if "invalid literal for int()" in e:
+                    if type(e) == ValueError:
                         raise ParseException(f"Invalid {category} input. Input an integer",
                                              error_location)
                 if int(value) not in range(1,4):
@@ -77,7 +77,7 @@ def get_input():
                 try:
                     int(value)    
                 except Exception as e:
-                    if "invalid literal for int()" in e:
+                    if type(e) == ValueError:
                         raise ParseException(f"Invalid {category} input. Input an integer",
                                              error_location)
                 if int(value) not in range(1001):
@@ -128,7 +128,7 @@ def get_input():
                   "!=: is not equal to operator\n\nExamples:\n" + 
                   "manufacuter == Kelloggs and potassium > 0\n" + 
                   "shelf == 3 and potassium > 0\n" + 
-                  "Queries are case sensitive\n")
+                  "Queries are case insensitive\n")
 
         else:
             valid_input = True
